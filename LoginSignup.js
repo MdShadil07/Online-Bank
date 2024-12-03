@@ -4,10 +4,11 @@ const mysql = require("mysql");
 const dotenv = require("dotenv");
 const session = require("express-session");
 
-dotenv.config();  
+dotenv.config(); // Load environment variables
 
 const app = express();
 
+// Database connection
 const db = mysql.createConnection({
   host: process.env.DATABASE_HOST,
   user: process.env.DATABASE_USER,
@@ -15,47 +16,48 @@ const db = mysql.createConnection({
   database: process.env.DATABASE
 });
 
-// Serve static files from both frontend and assets directories
-const publicDirectory = path.join(__dirname, './frontend');
-const assetsDirectory = path.join(__dirname, './assets');
-app.use(express.static(publicDirectory));
-app.use('/assets', express.static(assetsDirectory));
-
-
-
-
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
-
-app.set('view engine', 'hbs');
-
-// Use the session middleware with the session secret from .env
-app.use(session({
-  secret: process.env.SESSION_SECRET,  // Using your secret here
-  resave: false,
-  saveUninitialized: true,
-  cookie: { secure: false }  // Set to true if using HTTPS
-}));
-
+// Connect to MySQL
 db.connect((err) => {
   if (err) {
-    console.log(err);
+    console.error("MySQL connection error:", err);
   } else {
     console.log("MySQL connected...");
   }
 });
 
-// Define routes
-app.use('/', require('./route/pages')); // Serves pages like login, signup, etc.
-app.use('/auth', require('./route/auth')); // Handles signup, login POST requests, etc.
+// Middleware setup
+const publicDirectory = path.join(__dirname, './frontend');
+const assetsDirectory = path.join(__dirname, './assets');
 
+app.use(express.static(publicDirectory)); // Serve frontend static files
+app.use('/assets', express.static(assetsDirectory)); // Serve assets
+app.use(express.urlencoded({ extended: false })); // Parse URL-encoded bodies
+app.use(express.json()); // Parse JSON bodies
+
+// Session setup
+app.use(session({
+  secret: process.env.SESSION_SECRET, // Secret for signing the session ID cookie
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false } // Set to true if using HTTPS
+}));
+
+// View engine setup
+app.set('view engine', 'hbs');
+
+// Middleware for session user access in views
 app.use((req, res, next) => {
-  res.locals.user = req.session.user || nill;
+  res.locals.user = req.session.user || null;
   next();
 });
 
-app.listen(5004, () => {
-  console.log("Server started on http://localhost:5004");
+// Define routes
+app.use('/', require('./route/pages')); // General pages (e.g., login, signup)
+app.use('/auth', require('./route/auth')); // Authentication routes
+app.use('/profile', require('./route/auth')); // Profile-related routes
+
+// Start the server
+const PORT = 5004;
+app.listen(PORT, () => {
+  console.log(`Server started on http://localhost:${PORT}`);
 });
-
-

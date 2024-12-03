@@ -9,7 +9,7 @@
   --text-light: #e6e6ef;
   --border-color: #e2e8f0;
   --card-bg: #ffffff;
-  --font-family: 'Poppins', sans-serif;
+  --font-family: "Poppins", sans-serif;
   --h1-size: clamp(2rem, 5vw, 3.5rem);
   --h2-size: clamp(1.5rem, 3vw, 2rem);
   --body-size: clamp(0.875rem, 2vw, 1rem);
@@ -78,7 +78,7 @@ body {
   margin-bottom: var(--spacing-xl);
 }
 
-.logo span{
+.logo span {
   color: var(--success-color);
 }
 
@@ -156,7 +156,7 @@ body:has(#sidebar.hidden) .main-content {
   font-weight: 800;
 }
 
-.brand span{
+.brand span {
   color: var(--success-color);
 }
 
@@ -350,7 +350,6 @@ body:has(#sidebar.hidden) .main-content {
 
 .sidebar-overlay.active {
   display: block;
-  opacity: 1;
 }
 
 @media (max-width: 768px) {
@@ -417,23 +416,23 @@ body:has(#sidebar.hidden) .main-content {
 
 @media (min-width: 769px) {
   .toggle-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
-  
+
   #sidebar.hidden + .toggle-btn {
-      left: 0;
+    left: 0;
   }
-  
+
   #sidebar.hidden + .toggle-btn svg {
-      transform: rotate(180deg);
+    transform: rotate(180deg);
   }
 }
 
 @media (max-width: 768px) {
   .toggle-btn {
-      display: none !important;
+    display: none !important;
   }
 }
 
@@ -447,7 +446,7 @@ body:has(#sidebar.hidden) .main-content {
   :root {
     --container-max-width: 960px;
   }
-  
+
   .hero-text {
     font-size: clamp(1.25rem, 3vw, 2.5rem);
   }

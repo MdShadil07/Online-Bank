@@ -121,3 +121,21 @@ document.addEventListener("DOMContentLoaded", function () {
       }
   });
 });
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    const openAccountButton = document.getElementById('openAccountButton');
+  
+    // Check if the user has already created an account
+    if (localStorage.getItem('accountCreated')) {
+      openAccountButton.style.display = 'none'; // Hide the button
+    }
+  
+    // Example: Simulate account creation success
+    // Remove this in production; use the server response instead
+    document.getElementById('accountCreationForm')?.addEventListener('submit', () => {
+      localStorage.setItem('accountCreated', true);
+      openAccountButton.style.display = 'none'; // Hide the button after success
+    });
+  });
+  
