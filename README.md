@@ -34,7 +34,6 @@ Before getting started, ensure that you have the following software installed:
 - [Node.js](https://nodejs.org/) (LTS version recommended)
 - [MySQL](https://www.mysql.com/) or another SQL-compatible database
 - [Git](https://git-scm.com/)
-
 ### Steps to Clone and Setup
 
 1. **Clone the repository:**
