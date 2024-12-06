@@ -101,6 +101,14 @@
     document.querySelector('.bank-form').addEventListener('submit', async function (e) {
       e.preventDefault(); // Prevent default form submission
 
+      // Check if the token exists
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert('You are not logged in. Please log in first.');
+        window.location.href = '/login'; // Redirect to login page
+        return;
+      }
+
       // Collect form data
       const formData = new FormData();
       formData.append('fullName', document.getElementById('fullName').value);
@@ -111,7 +119,15 @@
       formData.append('initialDeposit', document.getElementById('initial-deposit').value);
       formData.append('dateOfBirth', document.getElementById('dob').value);
       formData.append('gender', document.getElementById('gender').value);
-      formData.append('profilePicture', document.getElementById('profilePicture').files[0]);
+
+      // Handle profile picture upload
+      const profilePicture = document.getElementById('profilePicture').files[0];
+      if (!profilePicture) {
+        alert('Please upload a profile picture.');
+        return;
+      }
+      formData.append('profilePicture', profilePicture);
+
       formData.append('password', document.getElementById('password').value);
       formData.append('securityQuestion', document.getElementById('securityQuestion').value);
       formData.append('securityAnswer', document.getElementById('securityAnswer').value);
@@ -127,10 +143,13 @@
         const response = await fetch('/auth/openaccount', {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("authToken")}`, // Include JWT token for authentication
+            Authorization: `Bearer ${localStorage.getItem("token")}`
+
           },
           body: formData // Send the formData with the image
         });
+
+        console.log("response:", response);
 
         // Check if the response is HTML (like a login page)
         const contentType = response.headers.get('Content-Type');
@@ -138,7 +157,7 @@
           const responseText = await response.text();
           console.error('Error: HTML response received, not JSON', responseText);
           alert('Session expired or unauthorized. Please log in again.');
-          window.location.href = '/login'; // Redirect to login page
+          window.location.href = '/bankForm'; // Redirect to login page
           return;
         }
 
@@ -151,8 +170,9 @@
           return;
         }
 
-        alert(result.message);
-        window.location.href = '/account-success'; // Redirect to success page after account creation
+        // On success, show a message and redirect to profile
+        alert(result.message || 'Account created successfully!');
+        window.location.href = '/profile'; // Redirect to profile page
 
       } catch (error) {
         console.error('Error:', error);

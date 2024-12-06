@@ -1,8 +1,14 @@
 const express = require("express");
 const path = require("path");
-const mysql = require("mysql");
+const mysql = require("mysql2");
 const dotenv = require("dotenv");
 const session = require("express-session");
+const multer = require('multer');
+ // Adjust the 'dest' path as needed
+
+// Use multer for file upload handling
+
+
 
 dotenv.config(); // Load environment variables
 
@@ -24,6 +30,8 @@ db.connect((err) => {
     console.log("MySQL connected...");
   }
 });
+
+module.exports = db;
 
 // Middleware setup
 const publicDirectory = path.join(__dirname, './frontend');
@@ -47,14 +55,22 @@ app.set('view engine', 'hbs');
 
 // Middleware for session user access in views
 app.use((req, res, next) => {
+  console.log('Session Data:', req.session);
   res.locals.user = req.session.user || null;
   next();
 });
 
+const upload = multer({ dest: 'uploads/' });
+
+
 // Define routes
 app.use('/', require('./route/pages')); // General pages (e.g., login, signup)
 app.use('/auth', require('./route/auth')); // Authentication routes
-app.use('/profile', require('./route/auth')); // Profile-related routes
+// app.use('/profile', require('./route/auth')); // Profile-related routes
+// app.use('/Transaction',require('./route/auth'));
+
+
+
 
 // Start the server
 const PORT = 5004;

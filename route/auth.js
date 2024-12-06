@@ -1,6 +1,7 @@
 const express = require('express');
 const authController = require('../controllers/auth');
 const authControllerProfile = require('../controllers/profileData');
+const transactionController = require('../controllers/mainTransaction'); // Import mainTransaction controller
 const jwt = require('jsonwebtoken');
 
 const router = express.Router();
@@ -9,6 +10,11 @@ const router = express.Router();
 router.post('/signup', authController.signup);
 router.post('/login', authController.login);
 router.post('/profile', authControllerProfile.profile);
+router.post('/Transaction', transactionController.Transaction);
+router.post('/addMoney', transactionController.addMoney);
+router.post('/sendMoney', transactionController.sendMoney);
+router.get('/getTransactionHistory', transactionController.getTransactionHistory);
+
 
 // Logout route
 router.get('/logout', (req, res) => {
@@ -47,12 +53,19 @@ function isTokenValid(req, res, next) {
   }
 }
 
-// Open account route - session-based or JWT validation
-router.post('/openaccount', isTokenValid, authController.openAccount);
+// Transaction routes
+router.post('/addMoney', isLoggedIn, transactionController.addMoney); // Add money to user's account
+router.post('/sendMoney', isLoggedIn, transactionController.sendMoney); 
+router.get('/getTransactionHistory', transactionController.getTransactionHistory);// Transfer money to another account
+router.get(
+  '/transactions/history/download/:accountNo',
+  isLoggedIn,
+  transactionController.downloadTransactionHistory
+); // Download transaction history
 
 // Dashboard route - requires login via session
 router.get('/dashboard', isLoggedIn, (req, res) => {
-  res.render('dashboard', { title: 'Dashboard' });
+  res.render('dashboard', { user: req.session.user });
 });
 
 module.exports = router;

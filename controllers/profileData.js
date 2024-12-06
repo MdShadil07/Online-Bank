@@ -1,5 +1,4 @@
-const mysql = require("mysql");
-const bcrypt = require('bcryptjs');
+const mysql = require("mysql2");
 const session = require('express-session');
 const multer = require('multer'); // Import multer for file handling
 const jwt = require('jsonwebtoken'); 
@@ -32,9 +31,8 @@ db.connect((err) => {
 
 // View Profile
 // View Profile
-// View Profile
 exports.profile = (req, res) => {
-  const userId = req.session.user ? req.session.userId : null;
+  const userId = req.session.userId;
 
   if (!userId) {
     return res.status(401).json({ error: 'User not logged in. Please log in first.' });
@@ -52,24 +50,40 @@ exports.profile = (req, res) => {
     }
 
     const userProfile = result[0];
-    res.render('profile', {
-      // username: userProfile.firstName && userProfile.lastName 
-      //             ? `${userProfile.firstName} ${userProfile.lastName}` 
-      //             : 'User',
-      // profilePicture: userProfile.profilePicture || '/assets/default-profile.PNG',
-      // firstName: userProfile.firstName || 'Not specified',
-      // lastName: userProfile.lastName || 'Not specified',
-      // email: userProfile.email || 'Not provided',
-      // phone: userProfile.phone || 'Not provided',
-      // gender: userProfile.gender || 'Not specified',
-      // DOB: userProfile.DOB || 'Not specified',
-      // initialDeposit: userProfile.initialDeposit || 120,
-      accountNumber: userProfile.userId,
-      ifscCode: 'XYZ123',
-      balance: userProfile.balance || 0
+
+    // Update the session with the latest data
+    req.session.user = {
+      userId: userProfile.userId,
+      firstName: userProfile.firstName,
+      lastName: userProfile.lastName,
+      email: userProfile.email,
+      phoneNumber: userProfile.phoneNumber,
+      address: userProfile.address,
+      gender: userProfile.gender,
+      DOB: userProfile.DOB,
+      accountNo: userProfile.accountNo,
+      ifscCode: userProfile.ifscCode,
+      accountBalance: userProfile.accountBalance,
+      branchName: userProfile.branchName,
+    };
+
+    // Send the latest data to the frontend
+    res.json({
+      fullName: `${userProfile.firstName || ''} ${userProfile.lastName || ''}`.trim(),
+      username: userProfile.firstName || 'User',
+      email: userProfile.email || 'Not provided',
+      phone: userProfile.phoneNumber || 'Not provided',
+      DOB: userProfile.DOB?.slice(0, 10) || 'Not specified',
+      gender: userProfile.gender || 'Not specified',
+      address: userProfile.address || 'No address',
+      accountNumber: userProfile.accountNo,
+      ifscCode: userProfile.ifscCode,
+      balance: userProfile.accountBalance || 0,
+      profileImage: userProfile.profilePicture || 'assets/default-profile.PNG',
     });
   });
 };
+
 
 // Handle profile image update
 exports.updateProfileImage = (req, res) => {
