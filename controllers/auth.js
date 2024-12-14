@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const jwt = require('jsonwebtoken');
 const isAuthenticated = require("../middleware/authMiddleware");
+const nodemailer = require('nodemailer');
 
 // Database connection setup
 const db = mysql.createConnection({
@@ -52,8 +53,17 @@ function isTokenValid(req, res, next) {
 }
 
 
-// Sign up function
 
+const transporter = nodemailer.createTransport({
+  service: 'gmail', // You can use other email services like Outlook, etc.
+  auth: {
+    user: process.env.EMAIL_USER, // Your email address (e.g., 'youremail@gmail.com')
+    pass: process.env.EMAIL_PASS, // Your email password (use app-specific passwords if using Gmail with 2FA)
+  },
+});
+
+
+// Sign up function
 exports.signup = (req, res) => {
   const {
     firstName, lastName, DOB, email, phoneNumber, address, branchName, accountStatus,
@@ -66,11 +76,8 @@ exports.signup = (req, res) => {
     return res.render('signup', {
       message: 'All fields are required.'
     });
-
   }
-  
 
-  
   const maleProfile = `https://avatar.iran.liara.run/public/boy?username=${firstName}`;
   const femaleProfile = `https://avatar.iran.liara.run/public/girl?username=${firstName}`;
   const profilePicture = gender.toLowerCase() === 'male' ? maleProfile : femaleProfile;
@@ -158,6 +165,153 @@ exports.signup = (req, res) => {
           }
 
           console.log('User registered successfully:', result);
+          
+          // HTML email template with Font Awesome icons and transitions
+          const emailBody = `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Welcome to Coin to Flow</title>
+              <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+              <style>
+                body {
+                  font-family: Arial, sans-serif;
+                  background-color: #f4f4f9;
+                  margin: 0;
+                  padding: 0;
+                }
+                .email-container {
+                  width: 100%;
+                  max-width: 600px;
+                  margin: 0 auto;
+                  background-color: #ffffff;
+                  border: 1px solid #ddd;
+                  border-radius: 8px;
+                  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                }
+                .email-header {
+                  background-color: #003366;
+                  color: #ffffff;
+                  padding: 20px;
+                  text-align: center;
+                  border-top-left-radius: 8px;
+                  border-top-right-radius: 8px;
+                }
+                .email-header img {
+                  max-width: 120px;
+                }
+                .email-body {
+                  padding: 20px;
+                }
+                .email-body h2 {
+                  color: #003366;
+                }
+                .email-body p {
+                  color: #333;
+                  line-height: 1.6;
+                }
+                .account-details {
+                  background-color: #f1f1f1;
+                  padding: 15px;
+                  border-radius: 6px;
+                  margin: 20px 0;
+                }
+                .account-details p {
+                  margin: 5px 0;
+                }
+                .footer {
+                  text-align: center;
+                  background-color: #003366;
+                  color: #ffffff;
+                  padding: 15px;
+                  border-bottom-left-radius: 8px;
+                  border-bottom-right-radius: 8px;
+                }
+                .footer a {
+                  color: #ffffff;
+                  text-decoration: none;
+                }
+                .footer .social-icons img {
+                  width: 30px;
+                  margin: 5px;
+                  transition: transform 0.3s ease-in-out;
+                }
+                .footer .social-icons img:hover {
+                  transform: scale(1.2);
+                }
+                .footer .fa {
+                  font-size: 20px;
+                  margin: 0 10px;
+                  transition: color 0.3s ease-in-out;
+                }
+                .footer .fa:hover {
+                  color: #1e90ff;
+                }
+              </style>
+            </head>
+            <body>
+              <div class="email-container">
+                <div class="email-header">
+                  <img src="https://your-domain.com/logo.png" alt="Coin to Flow Logo">
+                  <h1>Welcome to Coin to Flow</h1>
+                </div>
+
+                <div class="email-body">
+                  <h2>Hello ${firstName} ${lastName},</h2>
+                  <p>Thank you for signing up for Coin to Flow! Your account has been successfully created. Below are your account details and login credentials.</p>
+
+                  <div class="account-details">
+                    <h3>Your Account Details:</h3>
+                    <p><strong>Account Number:</strong> ${accountNo}</p>
+                    <p><strong>IFSC Code:</strong> ${ifscCode}</p>
+                    <p><strong>Branch Name:</strong> ${branchName}</p>
+                    <p><strong>Account Type:</strong> ${accountType}</p>
+                    <p><strong>Account Status:</strong> ${accountStatus}</p>
+                  </div>
+
+                  <div class="account-details">
+                    <h3>Your Login Credentials:</h3>
+                    <p><strong>Email:</strong> ${email}</p>
+                    <p><strong>Password:</strong> ${password} (Please change this after your first login)</p>
+                  </div>
+
+                  <p>If you have any questions or need further assistance, feel free to contact us at <strong>support@cointoflow.com</strong>.</p>
+
+                  <p>Welcome aboard, and we hope you enjoy your experience with Coin to Flow!</p>
+                </div>
+
+                <div class="footer">
+                  <p>&copy; 2024 Coin to Flow. All rights reserved.</p>
+                  <p>Follow us:</p>
+                  <div class="social-icons">
+                    <a href="https://facebook.com/cointoflow" target="_blank"><i class="fab fa-facebook"></i></a>
+                    <a href="https://twitter.com/cointoflow" target="_blank"><i class="fab fa-twitter"></i></a>
+                    <a href="https://linkedin.com/company/cointoflow" target="_blank"><i class="fab fa-linkedin"></i></a>
+                  </div>
+                </div>
+              </div>
+            </body>
+            </html>
+          `;
+
+          // Send email with HTML content
+          const mailOptions = {
+            from: process.env.EMAIL_USER, // Your email address
+            to: email,
+            subject: 'Welcome to Coin to Flow!',
+            html: emailBody,
+          };
+
+          transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+              console.error('Error sending email:', error);
+            } else {
+              console.log('Email sent:', info.response);
+            }
+          });
+
           return res.render('login', {
             message: 'You are registered, please log in.'
           });

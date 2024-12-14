@@ -1,132 +1,276 @@
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sign up</title>
-  <link rel="stylesheet" href="/signup.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up</title>
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background-color: #121212;
+      color: #fff;
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .form-container {
+      background-color: #1f1f1f;
+      border-radius: 10px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+      padding: 1.5rem;
+      width: 75%;
+      /* Reduced the width by 25% */
+      max-width: 450px;
+      box-sizing: border-box;
+      overflow-y: auto;
+      max-height: 90vh;
+      position: relative;
+    }
+
+    .form-header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .form-header h2 {
+      font-weight: 600;
+      color: #ffc107;
+    }
+
+    .form-header p {
+      color: #b0b0b0;
+      font-size: 0.9rem;
+    }
+
+    .btn-warning {
+      background-color: #ffc107;
+      border: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .btn-warning:hover {
+      background-color: #e0a800;
+    }
+
+    .form-control:focus {
+      border-color: #ffc107;
+      box-shadow: 0 0 5px rgba(255, 193, 7, 0.5);
+    }
+
+    .form-label {
+      font-weight: 500;
+      color: #ccc;
+    }
+
+    .form-check-label {
+      color: #ccc;
+    }
+
+    .form-container img.bank-image {
+      position: absolute;
+      top: -50px;
+      left: -50px;
+      width: 120px;
+      opacity: 0.1;
+    }
+
+    .input-icon {
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      color: #ccc;
+    }
+
+    /* Custom Scrollbar Styles */
+    .form-container::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .form-container::-webkit-scrollbar-thumb {
+      background-color: #ffc107;
+      border-radius: 10px;
+    }
+
+    .form-container::-webkit-scrollbar-track {
+      background-color: #333;
+    }
+
+    @media (max-width: 768px) {
+      .form-container {
+        padding: 1rem;
+        max-width: 100%;
+        margin: 0 20px;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .form-container {
+        margin: 0 10px;
+        padding: 1.2rem;
+      }
+    }
+  </style>
 </head>
 
 <body>
-  <div class="form-container">
-    <form class="bank-form" action="/auth/signup" method="post">
-      <h2>Open a New Bank Account</h2>
-      <p>Please fill out the form below to create your bank account.</p>
+  <div class="container d-flex justify-content-center align-items-center vh-100">
+    <div class="form-container">
+      <!-- Optional Background Image -->
+      <img src="https://via.placeholder.com/150?text=Bank" alt="Bank Icon" class="bank-image">
 
-      <div class="input-group">
-        <input type="text" name="firstName" class="fullName" required>
-        <label for="firstName">First Name</label>
+      <div class="form-header">
+        <h2><i class="fas fa-university"></i> Open a New Bank Account</h2>
+        <p>Fill out the form below to create your account</p>
       </div>
 
-      <div class="input-group">
-        <input type="text" name="lastName" class="fullName" required>
-        <label for="firstName">Last Name</label>
+      <!-- Error Message Handling -->
+      {{#if message}}
+      <div class="alert alert-danger mt-4">
+        <strong>{{message}}</strong>
       </div>
+      {{/if}}
+
+      <form class="bank-form" action="/auth/signup" method="post">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="firstName" class="form-label">First Name</label>
+            <div class="input-group">
+              <input type="text" name="firstName" class="form-control" id="firstName" required>
+              <span class="input-group-text"><i class="fas fa-user"></i></span>
+            </div>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label for="lastName" class="form-label">Last Name</label>
+            <div class="input-group">
+              <input type="text" name="lastName" class="form-control" id="lastName" required>
+              <span class="input-group-text"><i class="fas fa-user"></i></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="email" class="form-label">Email Address</label>
+            <div class="input-group">
+              <input type="email" name="email" class="form-control" id="email" required>
+              <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+            </div>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label for="phone" class="form-label">Phone Number</label>
+            <div class="input-group">
+              <input type="tel" name="phoneNumber" class="form-control" id="phone" required>
+              <span class="input-group-text"><i class="fas fa-phone-alt"></i></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="address" class="form-label">Residential Address</label>
+          <textarea name="address" class="form-control" id="address" rows="3" required></textarea>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="account-type" class="form-label">Account Type</label>
+            <select name="accountType" class="form-select" id="account-type" required>
+              <option value="" disabled selected>Select Account Type</option>
+              <option value="savings">Savings Account</option>
+              <option value="current">Current Account</option>
+              <option value="fixed-deposit">Fixed Deposit Account</option>
+            </select>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label for="branchName" class="form-label">Branch Name</label>
+            <div class="input-group">
+              <input type="text" name="branchName" class="form-control" id="branchName" required>
+              <span class="input-group-text"><i class="fas fa-building"></i></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="DOB" class="form-label">Date of Birth</label>
+            <input type="date" name="DOB" class="form-control" id="dob" required>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label for="gender" class="form-label">Gender</label>
+            <select name="gender" class="form-select" id="gender" required>
+              <option value="" disabled selected>Select Gender</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="profilePicture" class="form-label">Profile Picture (Optional)</label>
+          <input type="file" class="form-control" name="profilePicture" id="profilePicture" accept="image/*">
+        </div>
 
 
-      <div class="input-group">
-        <input type="email" name="email" id="email" required>
-        <label for="email">Email Address</label>
-      </div>
+        <div class="mb-3">
+          <input type="number" class="form-control" name="initialDeposit" id="initial-deposit" step="0.01"
+            placeholder="Enter the initial balance" required>
+          <label for="initialDeposit" class="form-label">Initial Deposit (in $)</label>
+        </div>
 
-      <div class="input-group">
-        <input type="tel" name="phoneNumber" id="phone" required>
-        <label for="phoneNumber">Phone Number</label>
-      </div>
+        <!-- Security Question and Answer -->
+        <div class="mb-3">
+          <label for="securityQuestion" class="form-label">Security Question (Optional)</label>
+          <input type="text" name="securityQuestion" id="securityQuestion" class="form-control"
+            placeholder="Enter a security question (Optional)">
+        </div>
 
-      <div class="input-group">
-        <textarea name="address" id="address" rows="3" required></textarea>
-        <label for="address">Residential Address</label>
-      </div>
+        <div class="mb-3">
+          <label for="securityAnswer" class="form-label">Security Answer (Optional)</label>
+          <input type="text" name="securityAnswer" id="securityAnswer" class="form-control"
+            placeholder="Enter the answer to your security question (Optional)">
+        </div>
 
-      <div class="input-group">
-        <select name="accountType" id="account-type" required>
-          <option value="" disabled selected>Select Account Type</option>
-          <option value="savings">Savings Account</option>
-          <option value="current">Current Account</option>
-          <option value="fixed-deposit">Fixed Deposit Account</option>
-        </select>
-        <label for="account-type" class="select-label">Account Type</label>
-      </div>
+        <div class="mb-3 form-check">
+          <input type="checkbox" name="twoFAEnabled" class="form-check-input" id="twoFA">
+          <label for="twoFA" class="form-check-label">Enable Two-Factor Authentication</label>
+        </div>
 
-      <div class="input-group">
-        <input type="text" name="branchName" id="initial-deposit" required>
-        <label for="initial-deposit">Branch Name</label>
-      </div>
+        <div class="mb-3">
+          <label for="password" class="form-label">Password</label>
+          <div class="input-group">
+            <input type="password" name="password" class="form-control" id="password" required>
+            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+          </div>
+        </div>
 
-      <div class="input-group">
-        <input type="number" name="initialDeposit" id="initial-deposit" step="0.01" required>
-        <label for="initial-deposit">Initial Deposit (in $)</label>
-      </div>
+        <div class="mb-3">
+          <label for="passwordConfirm" class="form-label">Confirm Password</label>
+          <div class="input-group">
+            <input type="password" name="passwordConfirm" class="form-control" id="passwordConfirm" required>
+            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+          </div>
+        </div>
 
-      <div class="input-group">
-        <input type="date" name="DOB" id="dob" required>
-        <label for="DOB">Date of Birth</label>
-      </div>
-
-      <div class="input-group">
-        <select name="gender" id="gender" required>
-          <option value="" disabled selected>Select Gender</option>
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-          <option value="other">Other</option>
-        </select>
-        <label for="gender" class="select-label">Gender</label>
-      </div>
-
-      <div class="input-group">
-        <label for="profilePicture">Profile Picture (Optional)</label>
-        <input type="file" name="profilePicture" id="profilePicture" accept="image/*">
-      </div>
-
-
-      <div class="input-group">
-        <input type="password" name="password" id="password" required>
-        <label for="password">Password</label>
-      </div>
-
-
-      <div class="input-group">
-        <input type="password" name="passwordConfirm" id="password" required>
-        <label for="password">Confirm Password</label>
-      </div>
-
-      <div class="input-group">
-        <input type="text" name="securityQuestion" id="securityQuestion"
-          placeholder="Enter a security question (Optional)">
-        <label for="securityQuestion">Security Question</label>
-      </div>
-
-      <div class="input-group">
-        <input type="text" name="securityAnswer" id="securityAnswer"
-          placeholder="Enter the answer to your security question (Optional)">
-        <label for="securityAnswer">Security Answer</label>
-      </div>
-
-      <div class="input-group">
-        <label for="twoFAEnabled">Enable Two-Factor Authentication</label>
-        <input type="checkbox" name="twoFAEnabled" id="twoFA">
-      </div>
-
-      <input type="hidden" name="accountStatus" value="active"> <!-- Default account status -->
-
-      <button type="submit">Submit Application</button>
-    </form>
-  </div>
-
-  <!-- Error Message Handling -->
-  {{#if message}}
-  <div class="alert alert-danger mt-4">
-    <strong>{{message}}</strong>
-  </div>
-  {{/if}}
-
-  </div>
-  {{!-- <div class="form-img">
-    <img src="/assets/bg.png" alt="signup image" /> --}}
-  </div>
-  </div>
-  </div>
+        <button type="submit" class="btn btn-warning w-100">Submit Application</button>
+      </form>
+    </div>
   </div>
 </body>
 

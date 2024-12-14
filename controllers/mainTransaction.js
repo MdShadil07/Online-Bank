@@ -1,15 +1,29 @@
-; // Ensure db is correctly exported from the LoginSignup file
+
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
 const session = require('express-session');
 const mysql = require("mysql2");
+const nodemailer = require('nodemailer');
+
 
 const db = mysql.createConnection({
   host: process.env.DATABASE_HOST,
   user: process.env.DATABASE_USER,
   password: process.env.DATABASE_PASSWORD || null,
   database: process.env.DATABASE
+});
+
+const dbPromise = db.promise();
+
+
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
 });
 
 // Check if database connection is successful
@@ -34,159 +48,323 @@ exports.Transaction = async (req, res) => {
       return res.status(401).json({ error: "User not logged in." });
     }
 
-    const [result] = await db.query("SELECT * FROM usersignup WHERE accountNo = ?", [accountNo]);
+    // Use promise-based query for fetching user data
+    const [result] = await dbPromise.query("SELECT * FROM usersignup WHERE accountNo = ?", [accountNo]);
 
     if (result.length === 0) {
+      console.error("User not found.");
       return res.status(404).json({ error: "User not found." });
     }
- 
+
     const userProfile = result[0];
-    console.log("Transaction data fetched successfully:", userProfile);
+    console.log("User profile fetched successfully:", userProfile);
 
+    // Pagination variables
+    const page = req.query.page || 1;
+    const itemsPerPage = 5;
+    const offset = (page - 1) * itemsPerPage;
 
-    const [transactions] = await db.query(
-      "SELECT transactionId, transactionType, amount, balanceAfter, transactionDate, description FROM transactions WHERE accountNo = ? ORDER BY transactionDate DESC",
+    // Use promise-based query to fetch paginated transactions
+    const [transactions] = await dbPromise.query(
+      "SELECT transactionId, transactionType, amount, balanceAfter, transactionDate, description FROM transactions WHERE accountNo = ? ORDER BY transactionDate DESC LIMIT ? OFFSET ?",
+      [accountNo, itemsPerPage, offset]
+    );
+
+    if (transactions.length === 0) {
+      console.warn("No transactions found for user:", accountNo);
+    }
+
+    // Get total number of transactions for pagination
+    const [countResult] = await dbPromise.query(
+      "SELECT COUNT(*) AS total FROM transactions WHERE accountNo = ?",
       [accountNo]
     );
+    const totalTransactions = countResult[0].total;
+    const totalPages = Math.ceil(totalTransactions / itemsPerPage);
 
     console.log("Transaction history fetched successfully:", transactions);
 
-
-    res.render("Transaction", {
+    // Return response with user profile and transaction details
+    res.json({
       username: userProfile.firstName && userProfile.lastName
         ? `${userProfile.firstName} ${userProfile.lastName}`
         : "User",
       profilePicture: userProfile.profilePicture || "/default.png",
-      firstName: userProfile.firstName || "Not specified",
-      lastName: userProfile.lastName || "Not specified",
-      email: userProfile.email || "Not provided",
-      phoneNumber: userProfile.phoneNumber || "Not provided",
-      address: userProfile.address || "Not provided",
-      gender: userProfile.gender || "Not specified",
-      DOB: userProfile.DOB ? userProfile.DOB.slice(0, 10) : "Not specified",
-      initialDeposit: userProfile.initialDeposit || 120,
-      accountNo: userProfile.accountNo,
-      ifscCode: userProfile.ifscCode,
-      accountStatus: userProfile.accountStatus,
-      accountBalance: userProfile.accountBalance,
-      branchName: userProfile.branchName || "Not specified",
-      transactions, 
+      transactions,
+      totalPages,
+      currentPage: parseInt(page),
     });
+
   } catch (error) {
     console.error("Error fetching user profile:", error.message);
     res.status(500).json({ error: "An error occurred. Please try again later." });
   }
 };
 
+
 // Add Money
+
+const sendTransactionEmail = (recipientEmail, subject, transactionDetails) => {
+  const emailBody = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${subject}</title>
+      <style>
+        /* Body styles */
+        body {
+          font-family: 'Poppins', sans-serif;
+          background-color: #121212;
+          color: #ffffff;
+          margin: 0;
+          padding: 0;
+        }
+
+        /* Container style */
+        .container {
+          background-color: #1e1e1e;
+          padding: 20px;
+          border-radius: 10px;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+          width: 100%;
+          max-width: 600px;
+          margin: 20px auto;
+        }
+
+        /* Header style */
+        .header {
+          text-align: center;
+          padding-bottom: 20px;
+          border-bottom: 2px solid #444;
+        }
+
+        .header h1 {
+          color: #f39c12;
+          font-size: 24px;
+          margin: 0;
+          font-weight: 600;
+        }
+
+        /* Transaction details */
+        .transaction-details {
+          padding-top: 20px;
+          border-top: 2px solid #444;
+        }
+
+        .transaction-details p {
+          font-size: 16px;
+          color: #ffffff;
+        }
+
+        .transaction-details p strong {
+          color: #f39c12;
+        }
+
+        .transaction-details i {
+          margin-right: 10px;
+        }
+
+        /* Buttons */
+        .btn {
+          background-color: #f39c12;
+          border: none;
+          color: white;
+          padding: 12px 25px;
+          font-size: 16px;
+          border-radius: 5px;
+          text-decoration: none;
+          display: inline-block;
+          margin-top: 20px;
+          margin-left: 100px;
+          transition: background-color 0.3s ease-in-out;
+        }
+
+        .btn:hover {
+          background-color: #e67e22;
+        }
+
+        /* Footer */
+        .footer {
+          text-align: center;
+          font-size: 0.9rem;
+          padding: 20px;
+          border-top: 2px solid #444;
+          color: #888;
+        }
+
+        .footer a {
+          color: #f39c12;
+          text-decoration: none;
+        }
+
+        /* Responsive design */
+        @media (max-width: 600px) {
+          .container {
+            padding: 15px;
+          }
+
+          .header h1 {
+            font-size: 22px;
+          }
+
+          .transaction-details p {
+            font-size: 14px;
+          }
+
+          .btn {
+            padding: 10px 20px;
+            font-size: 14px;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <!-- Header -->
+
+         <div class="header">
+      <h1>Coin2Flow</h1>
+      <h2 class="text-warning">Transaction Update from Your Bank</h2>
+    </div>
+        <div class="header">
+          <h1>${subject}</h1>
+        </div>
+
+        <!-- Transaction Details -->
+        <div class="transaction-details">
+          <p><i class="fas fa-arrow-up text-success"></i><strong>Amount Added:</strong> ₹${transactionDetails.amount}</p>
+          <p><i class="fas fa-wallet text-info"></i><strong>Account Number:</strong> ${transactionDetails.accountNo}</p>
+          <p><i class="fas fa-exchange-alt text-warning"></i><strong>Transaction Type:</strong> ${transactionDetails.transactionType}</p>
+          <p><i class="fas fa-check-circle text-success"></i><strong>New Balance:</strong> ₹${transactionDetails.newBalance}</p>
+        </div>
+
+        <!-- Call to Action Button -->
+        <div class="text-center">
+          <a href="${transactionDetails.transactionLink}" class="btn">View Full Transaction History</a>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+          <p>Thank you for banking with us!</p>
+          <p>Follow us on: 
+            <a href="https://www.instagram.com/Md_shadil7" target="_blank"><i class="fab fa-instagram"></i></a> 
+            <a href="https://twitter.com/Mdshadil07" target="_blank"><i class="fab fa-twitter"></i></a> 
+            <a href="https://facebook.com/mdshadil" target="_blank"><i class="fab fa-facebook"></i></a>
+          </p>
+          <p><small>&copy; ${new Date().getFullYear()} Your Bank. All rights reserved.</small></p>
+        </div>
+      </div>
+
+      <!-- FontAwesome Icons -->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+    </body>
+    </html>
+  `;
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: recipientEmail,
+    subject: subject,
+    html: emailBody,
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.error("Error sending email:", error);
+    } else {
+      console.log("Email sent: " + info.response);
+    }
+  });
+};
+
+
 exports.addMoney = (req, res) => {
   const accountNo = req.session.user ? req.session.user.accountNo : null;
 
   if (!accountNo) {
-    console.error('Account number not found in session.');
     return res.status(401).json({ message: 'User not logged in. Please log in first.' });
   }
 
   const { amount } = req.body;
 
   if (isNaN(amount) || amount <= 0) {
-    console.error('Invalid amount:', amount);
     return res.status(400).json({ message: 'Invalid amount. Amount must be greater than zero.' });
   }
 
   db.beginTransaction((err) => {
     if (err) {
-      console.error('Error starting transaction:', err.message);
       return res.status(500).json({ message: 'Internal server error. Please try again later.' });
     }
 
-    // Fetch current balance
-    db.query('SELECT accountBalance FROM usersignup WHERE accountNo = ?', [accountNo], (err, result) => {
+    db.query('SELECT accountBalance, email FROM usersignup WHERE accountNo = ?', [accountNo], (err, result) => {
       if (err) {
         return db.rollback(() => {
-          console.error('Error fetching balance:', err.message);
-          res.status(500).json({ message: 'Error fetching balance. Please try again later.' });
+          res.status(500).json({ message: 'Error fetching balance.' });
         });
       }
 
-      if (result.length === 0) {
-        return db.rollback(() => {
-          console.error('Account not found for accountNo:', accountNo);
-          res.status(404).json({ message: 'Account not found. Please check and try again.' });
-        });
-      }
-
-      const currentBalance = parseFloat(result[0].accountBalance); // Ensure it's a valid number
+      const currentBalance = parseFloat(result[0].accountBalance);
       const newBalance = currentBalance + parseFloat(amount);
+      const email = result[0].email;
 
-      console.log(`Current Balance: ${currentBalance}, New Balance: ${newBalance}`);
+      db.query('UPDATE usersignup SET accountBalance = ? WHERE accountNo = ?', [newBalance, accountNo], (updateErr) => {
+        if (updateErr) {
+          return db.rollback(() => {
+            res.status(500).json({ message: 'Error updating balance.' });
+          });
+        }
 
-      // Update account balance in the usersignup table
-      db.query(
-        'UPDATE usersignup SET accountBalance = ? WHERE accountNo = ?',
-        [newBalance, accountNo],
-        (updateErr) => {
-          if (updateErr) {
-            return db.rollback(() => {
-              console.error('Error updating balance in usersignup:', updateErr.message);
-              res.status(500).json({ message: 'Error updating balance. Please try again later.' });
-            });
-          }
+        db.query(
+          'INSERT INTO transactions (accountNo, transactionType, amount, balanceAfter, description, transactionDate) VALUES (?, ?, ?, ?, ?, NOW())',
+          [accountNo, 'credit', amount, newBalance, 'Money added to account'],
+          (transactionErr) => {
+            if (transactionErr) {
+              return db.rollback(() => {
+                res.status(500).json({ message: 'Error recording transaction.' });
+              });
+            }
 
-          console.log('Balance updated in usersignup successfully.');
-
-          // Record the transaction in the transactions table
-          db.query(
-            'INSERT INTO transactions (accountNo, transactionType, amount, balanceAfter, description, transactionDate) VALUES (?, ?, ?, ?, ?, NOW())',
-            [accountNo, 'credit', amount, newBalance, 'Money added to account'],
-            (transactionErr) => {
-              if (transactionErr) {
+            db.commit((commitErr) => {
+              if (commitErr) {
                 return db.rollback(() => {
-                  console.error('Error recording transaction:', transactionErr.message);
-                  res.status(500).json({ message: 'Error recording transaction. Please try again later.' });
+                  res.status(500).json({ message: 'Error committing transaction.' });
                 });
               }
 
-              console.log('Transaction recorded successfully in transactions table.');
+              const transactionDetails = {
+                amount: amount,
+                accountNo: accountNo,
+                transactionType: 'credit',
+                newBalance: newBalance,
+              };
 
-              // Commit the transaction
-              db.commit((commitErr) => {
-                if (commitErr) {
-                  return db.rollback(() => {
-                    console.error('Error committing transaction:', commitErr.message);
-                    res.status(500).json({ message: 'Error committing transaction. Please try again later.' });
-                  });
-                }
+              sendTransactionEmail(email, 'Money Added to Your Account', transactionDetails);
 
-                console.log('Transaction committed successfully.');
-                res.status(200).json({
-                  message: `You have added ${amount} in your account `,
-                  newBalance,
-                });
+              res.status(200).json({
+                message: `You have added ₹${amount} in your account.`,
+                newBalance,
               });
-            }
-          );
-        }
-      );
+            });
+          }
+        );
+      });
     });
   });
 };
 
-// Send Money
+
 // Send Money
 exports.sendMoney = async (req, res) => {
-  const senderAccountNo = req.session?.user?.accountNo; // Get sender's account from session
+  const senderAccountNo = req.session?.user?.accountNo;
 
   if (!senderAccountNo) {
-    console.error("Sender account not found in session.");
     return res.status(401).json({ message: "User not logged in. Please log in first." });
   }
 
   const { receiverAccountNo, amount, receiverIfsc } = req.body;
 
-  console.log("Request body:", req.body);
-
-  // Input Validation
   if (!receiverAccountNo || isNaN(amount) || amount <= 0 || !receiverIfsc) {
     return res.status(400).json({
       message: "Invalid input. Receiver account, valid amount, and IFSC Code are required.",
@@ -194,9 +372,8 @@ exports.sendMoney = async (req, res) => {
   }
 
   try {
-    // Fetch sender's balance
     const [senderResult] = await db.promise().query(
-      "SELECT accountBalance FROM usersignup WHERE accountNo = ?",
+      "SELECT accountBalance, email FROM usersignup WHERE accountNo = ?",
       [senderAccountNo]
     );
 
@@ -209,9 +386,8 @@ exports.sendMoney = async (req, res) => {
       return res.status(400).json({ message: "Insufficient balance." });
     }
 
-    // Fetch receiver's balance and IFSC code
     const [receiverResult] = await db.promise().query(
-      "SELECT accountBalance, ifscCode FROM usersignup WHERE accountNo = ?",
+      "SELECT accountBalance, ifscCode, email FROM usersignup WHERE accountNo = ?",
       [receiverAccountNo]
     );
 
@@ -220,72 +396,72 @@ exports.sendMoney = async (req, res) => {
     }
 
     const receiverBalance = parseFloat(receiverResult[0].accountBalance);
-    const receiverIfscCode = receiverResult[0].ifscCode; 
-    
-    console.log("Receuver Ifsc code:", receiverIfscCode)// Get receiver's IFSC code
+    const receiverIfscCode = receiverResult[0].ifscCode;
+    const receiverEmail = receiverResult[0].email;
 
-    // Normalize and validate receiver's IFSC code
     if (receiverIfscCode.trim().toUpperCase() !== receiverIfsc.trim().toUpperCase()) {
-      console.log("Receiver IFSC Code:", receiverIfscCode);
-      console.log("IFSC Code from Request:", receiverIfsc);
       return res.status(400).json({
-        message: `Incorrect IFSC Code for the receiver's account (${receiverAccountNo}). Please provide the correct IFSC Code.`,
+        message: `Incorrect IFSC Code for the receiver's account. Please provide the correct IFSC Code.`,
       });
     }
 
-    // Log receiver data and IFSC codes for debugging
-    console.log("Receiver Account Data:", receiverResult);
-    console.log("Normalized IFSC Codes for Comparison:", {
-      receiverIfscCode: receiverIfscCode.trim().toUpperCase(),
-      
-      receiverIfscCode: receiverIfscCode.trim().toUpperCase()
-    });
-
-    // Start transaction
     await db.promise().beginTransaction();
 
-    // Update sender's balance
     const newSenderBalance = senderBalance - amount;
+    const newReceiverBalance = receiverBalance + amount;
+
     await db.promise().query(
       "UPDATE usersignup SET accountBalance = ? WHERE accountNo = ?",
       [newSenderBalance, senderAccountNo]
     );
 
-    // Update receiver's balance
-    const newReceiverBalance = receiverBalance + amount;
     await db.promise().query(
       "UPDATE usersignup SET accountBalance = ? WHERE accountNo = ?",
       [newReceiverBalance, receiverAccountNo]
     );
 
-    // Record transaction for sender
     await db.promise().query(
-      `INSERT INTO transactions 
-        (accountNo, transactionType, amount, balanceAfter, receiverAccountNo, description, transactionDate) 
-        VALUES (?, 'debit', ?, ?, ?, ?, NOW())`,
+      `INSERT INTO transactions (accountNo, transactionType, amount, balanceAfter, receiverAccountNo, description, transactionDate) 
+      VALUES (?, 'debit', ?, ?, ?, ?, NOW())`,
       [senderAccountNo, amount, newSenderBalance, receiverAccountNo, `Transfer to ${receiverAccountNo}`]
     );
 
-    // Record transaction for receiver
     await db.promise().query(
-      `INSERT INTO transactions 
-        (accountNo, transactionType, amount, balanceAfter, receiverAccountNo, description, transactionDate) 
-        VALUES (?, 'credit', ?, ?, ?, ?, NOW())`,
+      `INSERT INTO transactions (accountNo, transactionType, amount, balanceAfter, receiverAccountNo, description, transactionDate) 
+      VALUES (?, 'credit', ?, ?, ?, ?, NOW())`,
       [receiverAccountNo, amount, newReceiverBalance, senderAccountNo, `Received from ${senderAccountNo}`]
     );
 
-    // Commit transaction
     await db.promise().commit();
 
-    console.log("Transaction successful.");
+    // Send emails
+    const senderEmail = senderResult[0].email;
+    const senderTransactionDetails = {
+      amount: amount,
+      accountNo: senderAccountNo,
+      transactionType: 'debit',
+      newBalance: newSenderBalance,
+    };
+
+    sendTransactionEmail(senderEmail, `Money Sent to Account ${receiverAccountNo}`, senderTransactionDetails, 'sender');
+
+    const receiverTransactionDetails = {
+      amount: amount,
+      accountNo: receiverAccountNo,
+      transactionType: 'credit',
+      newBalance: newReceiverBalance,
+    };
+
+    sendTransactionEmail(receiverEmail, `Money Received from Account ${senderAccountNo}`, receiverTransactionDetails, 'receiver');
+
     res.status(200).json({
-      message: `Money sent to Account: ${receiverAccountNo}. You have ₹${newReceiverBalance} remaining in your account.`,
+      message: `Money sent to Account: ${receiverAccountNo}. You have ₹${newSenderBalance} remaining in your account.`,
       newSenderBalance,
       newReceiverBalance,
     });
   } catch (error) {
     console.error("Error during sendMoney:", error.message);
-    await db.promise().rollback(); // Rollback on error
+    await db.promise().rollback();
     res.status(500).json({ message: "An error occurred. Please try again later." });
   }
 };
@@ -293,7 +469,9 @@ exports.sendMoney = async (req, res) => {
 
 // Download Transaction History as PDF
 
-// Helper function to format dates
+
+
+/// Helper function to format dates
 function formatDate(date) {
   const options = { year: 'numeric', month: 'long', day: 'numeric' };
   return new Date(date).toLocaleDateString(undefined, options);
@@ -322,8 +500,13 @@ exports.downloadTransactionHistory = async (req, res) => {
 
     const user = userResult[0];
 
-    // Fetch transaction history
-    const [transactions] = await db.promise().query('SELECT * FROM transactions WHERE accountNo = ? ORDER BY transactionDate DESC', [accountNo]);
+    // Fetch transaction history with receiver name by joining usersignup table
+    const [transactions] = await db.promise().query(`
+      SELECT t.*, u.firstName, u.lastName
+      FROM transactions t
+      LEFT JOIN usersignup u ON t.receiverAccountNo = u.accountNo
+      WHERE t.accountNo = ? 
+      ORDER BY t.transactionDate DESC`, [accountNo]);
 
     if (transactions.length === 0) {
       return res.status(404).json({ message: 'No transaction history found' });
@@ -365,7 +548,7 @@ exports.downloadTransactionHistory = async (req, res) => {
     doc.moveDown(1);
 
     // Table headers with bold, uppercase, and green color for the headers
-    const headers = ['TRANSACTION TYPE', 'DATE', 'TIME', 'AMOUNT', 'DESCRIPTION', 'RECEIVER ACCOUNT NO', 'NAME'];
+    const headers = ['TRANSACTION TYPE', 'DATE', 'TIME', 'AMOUNT', 'DESCRIPTION', 'RECEIVER NAME', 'SENDER NAME'];
     const headerWidths = [120, 60, 80, 60, 100, 140, 140];
 
     // Header styling
@@ -386,9 +569,9 @@ exports.downloadTransactionHistory = async (req, res) => {
         safeToUpperCase(transaction.transactionType),
         formatDate(transaction.transactionDate),
         new Date(transaction.transactionDate).toLocaleTimeString(),
-        formatAmount(transaction.amount),
+        formatAmount(parseFloat(transaction.amount)), // Ensure amount is parsed as a float
         safeToUpperCase(transaction.description),
-        (transaction.receiverAccountNo || 'N/A'),
+        (transaction.firstName && transaction.lastName) ? `${transaction.firstName} ${transaction.lastName}` : 'N/A', // Display receiver name
         (user.username || 'N/A')
       ];
 
@@ -444,34 +627,5 @@ exports.downloadTransactionHistory = async (req, res) => {
   } catch (error) {
     console.error('Error generating PDF:', error.message);
     res.status(500).json({ message: 'Error generating PDF. Please try again later.' });
-  }
-};
-
-
-// Transaction History Endpoint
-exports.getTransactionHistory = async (req, res) => {
-  try {
-    const accountNo = req.session?.user?.accountNo;
-
-    if (!accountNo) {
-      console.error("User session or account number missing.");
-      return res.status(401).json({ error: "User not logged in." });
-    }
-
-    // Fetch transaction history for the user
-    const [transactions] = await db.promise().query(
-      "SELECT * FROM transactions WHERE accountNo = ? ORDER BY transactionDate DESC",
-      [accountNo]
-    );
-
-    if (transactions.length === 0) {
-      return res.status(404).json({ message: "No transaction history found." });
-    }
-
-    // Return transaction data
-    res.status(200).json({ transactions });
-  } catch (error) {
-    console.error("Error fetching transaction history:", error.message);
-    res.status(500).json({ error: "An error occurred while fetching transaction history." });
   }
 };

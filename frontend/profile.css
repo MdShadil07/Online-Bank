@@ -1,19 +1,28 @@
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap");
 
 :root {
-  --primary-color: #4e89ff;
-  --secondary-color: #ff6b6b;
-  --background: #121212;
-  --profile-bg: #1e1e2f;
-  --card-bg: #2a2a3c;
-  --text-primary: #ffffff;
-  --text-secondary: #b0b3c2;
-  --font-family: "Poppins", sans-serif;
+  --primary-color: #4e89ff; /* Light Blue */
+  --secondary-color: #ff6b6b; /* Red */
+  --background: #121212; /* Full Dark Background */
+  --profile-bg: #1e1e2f; /* Darker background for profile boxes */
+  --card-bg: #2a2a3c; /* Dark Card Background */
+  --text-primary: #ffffff; /* White Text */
+  --text-secondary: #b0b3c2; /* Light Grey Text */
+  --highlight-green: #28a745; /* Green for success */
+  --highlight-yellow: #ffc107; /* Yellow for emphasis */
+  --highlight-warning: #ff9800; /* Warning Color (Orange) */
+  --highlight-error: #f44336; /* Red for error/warning */
+  --dynamic-data: #00c8ff; /* Blue for dynamic data */
+  --highlight-email: #ff9d00; /* Orange for email highlight */
+  --highlight-phone: #00ff6a; /* Green for phone highlight */
+  --highlight-address: #e63946; /* Red for address highlight */
+  --font-family: "Poppins", sans-serif; /* Modern font */
   --spacing-md: 1.5rem;
   --spacing-lg: 2rem;
   --spacing-xl: 3rem;
   --transition: all 0.3s ease;
-  --box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  --box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
+  --border-radius: 12px; /* Smooth borders */
 }
 
 body {
@@ -39,10 +48,26 @@ header {
   text-decoration: none;
   font-size: 1.1rem;
   margin-right: var(--spacing-md);
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  transition: var(--transition);
 }
 
 .navbar nav a:hover {
   color: var(--primary-color);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+}
+
+.user-info img {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin-right: var(--spacing-md);
 }
 
 .profile-container {
@@ -58,17 +83,19 @@ header {
 .bank-info-box {
   background-color: var(--profile-bg);
   padding: var(--spacing-lg);
-  border-radius: 10px;
+  border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);
   color: var(--text-secondary);
+  transition: var(--transition);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
 }
 
-.profile-box {
-  flex: 1;
-}
-
-.bank-info-box {
-  flex: 1;
+.profile-box:hover,
+.bank-info-box:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.8);
 }
 
 .profile-header {
@@ -78,12 +105,12 @@ header {
 }
 
 .profile-image-container {
-  width: 120px;
-  height: 120px;
+  width: 150px;
+  height: 150px;
   margin-right: var(--spacing-lg);
   border-radius: 50%;
   overflow: hidden;
-  border: 3px solid var(--primary-color);
+  border: 5px solid var(--primary-color);
 }
 
 .profile-image-container img {
@@ -92,15 +119,35 @@ header {
   object-fit: cover;
 }
 
-.profile-details p,
-.bank-info-details p {
-  font-size: 1rem;
+.profile-details p {
+  font-size: 1.2rem;
   margin: 0.5rem 0;
+  display: flex;
+  align-items: center;
 }
 
-.profile-details p strong,
+.profile-details p strong {
+  color: var(--highlight-email);
+  margin-right: 0.5rem;
+}
+
+.profile-details span {
+  color: var(--dynamic-data);
+  font-weight: 600;
+}
+
 .bank-info-details p strong {
-  color: var(--text-primary);
+  color: var(--highlight-phone);
+}
+
+.bank-info-details .badge {
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+}
+
+.bank-info-details .badge-success {
+  background-color: var(--highlight-green);
 }
 
 footer {
@@ -111,9 +158,195 @@ footer {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-@media (min-width: 768px) {
-  .profile-container {
-    flex-direction: row;
-    gap: var(--spacing-lg);
+.card {
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  background-color: var(--card-bg);
+  color: var(--text-secondary);
+}
+
+.card-header {
+  position: relative;
+  padding-top: 50px;
+  text-align: center;
+}
+
+.card-header img {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  margin-top: -50px;
+  border: 3px solid var(--primary-color);
+}
+
+.button-container {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+button.add-balance {
+  background-color: var(--primary-color);
+  color: var(--text-primary);
+}
+
+button.add-balance:hover {
+  background-color: rgba(78, 137, 255, 0.8);
+}
+
+button.send-money {
+  background-color: var(--highlight-yellow);
+  color: var(--background);
+}
+
+button.send-money:hover {
+  background-color: rgba(255, 193, 7, 0.8);
+}
+
+button.download-history {
+  background-color: var(--highlight-green);
+  color: var(--background);
+}
+
+button.download-history:hover {
+  background-color: rgba(40, 167, 69, 0.8);
+}
+
+.transaction-history {
+  background-color: var(--profile-bg);
+  padding: var(--spacing-lg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  margin-top: var(--spacing-lg);
+}
+
+.transaction-history h2 {
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-md);
+}
+
+.transaction-history table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1rem;
+}
+
+.transaction-history table th,
+.transaction-history table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.transaction-history table th {
+  color: var(--text-primary);
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.transaction-history table .credit {
+  color: var(--highlight-green);
+}
+
+.transaction-history table .debit {
+  color: var(--text-primary);
+}
+
+footer {
+  text-align: center;
+  padding: 20px;
+  background-color: #2a2a3c;
+  color: #ffffff;
+}
+
+.footer-btn {
+  background-color: #4e89ff;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  margin: 10px;
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+
+.footer-btn:hover {
+  background-color: rgba(78, 137, 255, 0.8);
+}
+
+/* Modal Overlay (Backdrop) */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
+  z-index: 1050; /* Ensures overlay is above content */
+  display: none; /* Initially hidden */
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* Modal Content */
+.modal-content {
+  background-color: #2a2a3c; /* Dark background */
+  color: var(--text-primary);
+  border-radius: 10px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 1060; /* Higher than overlay */
+  max-width: 600px;
+  margin: auto;
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Close Button */
+.close-btn {
+  color: var(--text-primary);
+  font-size: 30px;
+  font-weight: bold;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.close-btn:hover {
+  color: var(--highlight-error); /* Red for close button hover */
+}
+
+/* Modal visibility */
+.modal.show .modal-overlay {
+  display: block;
+  opacity: 1;
+}
+.modal.show .modal-content {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Animation for Modal */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }

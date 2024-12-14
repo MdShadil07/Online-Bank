@@ -1,30 +1,37 @@
-CREATE TABLE USERSIGNUP (
-  ACCOUNTNO INT(15) NOT NULL PRIMARY KEY, -- Account Number (Auto-generated)
-  ACCOUNTTYPE VARCHAR(55) NOT NULL, -- Account Type (Savings, Checking, etc.)
-  FULLNAME VARCHAR(255) NOT NULL, -- Full Name of the Account Holder
-  EMAIL VARCHAR(255) NOT NULL UNIQUE, -- Email (Used for login)
-  PHONENUMBER VARCHAR(15) NOT NULL, -- Phone Number
-  ADDRESS TEXT NOT NULL, -- User's Address
-  DATEOFBIRTH DATE NOT NULL, -- Date of Birth
-  GENDER VARCHAR(10) NOT NULL, -- Gender
-  PASSWORD VARCHAR(255) NOT NULL, -- Hashed Password
-  INITIALDEPOSIT DECIMAL(10, 2) NOT NULL, -- Initial Deposit (if applicable)
-  ACCOUNTBALANCE DECIMAL(15, 2) DEFAULT 0.00, -- Account Balance (default 0)
-  IFSCCODE VARCHAR(15) NOT NULL, -- IFSC Code (Auto-generated)
-  BRANCHNAME VARCHAR(255) NOT NULL, -- Branch Name (Auto-generated)
-  PROFILEPICTURE VARCHAR(255) DEFAULT NULL, -- Profile Picture (optional)
-  SECURITYQUESTION VARCHAR(255) DEFAULT NULL, -- Security Question (optional)
-  SECURITYANSWER VARCHAR(255) DEFAULT NULL, -- Security Answer (optional)
-  TWOFAENABLED BOOLEAN DEFAULT FALSE, -- Two-Factor Authentication Flag
-  TWOFASECRET VARCHAR(255) DEFAULT NULL, -- Two-Factor Authentication Secret
-  ACCOUNTSTATUS ENUM('active', 'suspended', 'deleted') DEFAULT 'active', -- Account Status
-  CREATEDAT TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Account Creation Time
-  UPDATEDAT TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP -- Account Last Update Time
+CREATE TABLE usersignup (
+    userId SERIAL PRIMARY KEY,
+    firstName VARCHAR(50) COLLATE utf8mb4_general_ci NOT NULL,
+    lastName VARCHAR(50) COLLATE utf8mb4_general_ci NOT NULL,
+    DOB DATE NOT NULL,
+    email VARCHAR(50) COLLATE utf8mb4_general_ci NOT NULL,
+    gender VARCHAR(20) COLLATE utf8mb4_general_ci NOT NULL,
+    password VARCHAR(255) COLLATE utf8mb4_general_ci NOT NULL,
+    initialDeposit DECIMAL(10,2) DEFAULT 0.00,
+    accountNo BIGINT(20) DEFAULT NULL,
+    accountType VARCHAR(55) COLLATE utf8mb4_general_ci NOT NULL,
+    fullName VARCHAR(255) COLLATE utf8mb4_general_ci NOT NULL,
+    phoneNumber VARCHAR(15) COLLATE utf8mb4_general_ci NOT NULL,
+    address TEXT COLLATE utf8mb4_general_ci NOT NULL,
+    accountBalance DECIMAL(15,2) DEFAULT 0.00,
+    ifscCode VARCHAR(15) COLLATE utf8mb4_general_ci NOT NULL,
+    branchName VARCHAR(255) COLLATE utf8mb4_general_ci NOT NULL,
+    profilePicture VARCHAR(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+    securityQuestion VARCHAR(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+    securityAnswer VARCHAR(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+    twoFAEnabled TINYINT(1) DEFAULT 0,
+    twoFASecret VARCHAR(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+    accountStatus VARCHAR(10) COLLATE utf8mb4_general_ci DEFAULT 'active' CHECK (accountStatus IN ('active', 'suspended', 'deleted')),
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Indexes for faster lookups
-CREATE INDEX IDX_EMAIL ON USERSIGNUP (EMAIL);
+-- Indexes
+CREATE INDEX idx_accountNo ON usersignup(accountNo);
+CREATE UNIQUE INDEX accountNo_UNIQUE ON usersignup(accountNo);
+CREATE INDEX accountNo_2 ON usersignup(accountNo);
 
-CREATE INDEX IDX_PHONENUMBER ON USERSIGNUP (PHONENUMBER);
-
-CREATE INDEX IDX_IFSC_CODE ON USERSIGNUP (IFSCCODE);
+-- Trigger to update updatedAt column
+CREATE TRIGGER update_timestamp
+BEFORE UPDATE ON usersignup
+FOR EACH ROW
+SET NEW.updatedAt = CURRENT_TIMESTAMP;

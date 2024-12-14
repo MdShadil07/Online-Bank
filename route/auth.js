@@ -10,10 +10,10 @@ const router = express.Router();
 router.post('/signup', authController.signup);
 router.post('/login', authController.login);
 router.post('/profile', authControllerProfile.profile);
-router.post('/Transaction', transactionController.Transaction);
+router.get('/Transaction', transactionController.Transaction);
 router.post('/addMoney', transactionController.addMoney);
 router.post('/sendMoney', transactionController.sendMoney);
-router.get('/getTransactionHistory', transactionController.getTransactionHistory);
+
 
 
 // Logout route
@@ -56,7 +56,7 @@ function isTokenValid(req, res, next) {
 // Transaction routes
 router.post('/addMoney', isLoggedIn, transactionController.addMoney); // Add money to user's account
 router.post('/sendMoney', isLoggedIn, transactionController.sendMoney); 
-router.get('/getTransactionHistory', transactionController.getTransactionHistory);// Transfer money to another account
+router.get('/Transactions', isLoggedIn, transactionController.Transaction); // Get transaction history
 router.get(
   '/transactions/history/download/:accountNo',
   isLoggedIn,

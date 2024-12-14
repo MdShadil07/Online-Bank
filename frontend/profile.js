@@ -84,22 +84,26 @@ document.getElementById('logout')?.addEventListener('click', (event) => {
       });
 });
 
-// Toggle Profile Card Visibility
-document.getElementById("toggleProfileBtn")?.addEventListener("click", function () {
-  const profileCard = document.getElementById("profileCard");
-  profileCard.classList.toggle("open"); // Toggle the 'open' class to show/hide profile card
-});
+// Modal elements
+const privacyModal = new bootstrap.Modal(document.getElementById("privacy-policy-modal"));
+const contactModal = new bootstrap.Modal(document.getElementById("contact-us-modal"));
 
-// Close Profile Card
-document.getElementById("closeProfileBtn")?.addEventListener("click", function () {
-  const profileCard = document.getElementById("profileCard");
-  profileCard.classList.remove("open"); // Ensure the profile card is closed
-});
+// Open the Privacy & Policy modal
+document.getElementById("privacy-policy-btn").onclick = function() {
+  privacyModal.show();
+};
 
-// Periodically Fetch Updated Profile Data
-setInterval(loadProfile, 2000); // Fetch and update profile data every 2 seconds
+// Open the Contact Us modal
+document.getElementById("contact-us-btn").onclick = function() {
+  contactModal.show();
+};
 
-// On Page Load
-window.onload = function() {
-  loadProfile(); // Load profile data on page load
+// Close the Privacy & Policy modal
+document.getElementById("close-privacy-btn").onclick = function() {
+  privacyModal.hide();
+};
+
+// Close the Contact Us modal
+document.getElementById("close-contact-btn").onclick = function() {
+  contactModal.hide();
 };

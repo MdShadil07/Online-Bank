@@ -1,7 +1,7 @@
 const express = require('express');
 const db = require('../LoginSignup'); // Ensure database connection is correct
 const authMiddleware = require('../middleware/authMiddleware'); // Adjust path if needed
-const { route } = require('./auth');
+
 const router = express.Router();
 
 // Function to fetch and update session user data
@@ -57,6 +57,18 @@ router.get('/signup', (req, res) => {
 // Route to render login page
 router.get('/login', (req, res) => {
   res.render('login');
+});
+
+router.get('/privacyTerms', (req, res) => {
+  res.render('privacyTerms');
+});
+
+router.get('/Terms', (req, res)=> {
+  res.render('Terms');
+});
+
+router.get('/viewBalance', (req, res) => {
+  res.render('viewBalance');
 });
 
 // Protected profile route
@@ -118,5 +130,35 @@ router.get('/Transaction', authMiddleware, async (req, res) => {
     res.status(500).send('Error fetching transaction data.');
   }
 });
+
+
+//vieaw balance rendeing
+
+
+// Route to render viewBalance page with the user data
+router.get('/viewBalance', authMiddleware, async (req, res) => {
+  const userId = req.session.user?.userId;
+  if (!userId) {
+    return res.redirect('/login');
+  }
+
+  try {
+    // Fetch and update the session user data
+    const user = await fetchAndUpdateUserSession(userId, req.session);
+
+    // Render the viewBalance page with the required user data
+    res.render('viewBalance', {
+      balance: user.accountBalance.toFixed(2),  // User's account balance
+      username: `${user.firstName} ${user.lastName}`.trim() || 'User',
+      accountNumber: user.accountNo,
+      ifscCode: user.ifscCode,
+      DOB: user.DOB,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error fetching balance data.');
+  }
+});
+
 
 module.exports = router;
