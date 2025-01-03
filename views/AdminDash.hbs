@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Coin2Flow</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      background-color: #121212;
+      color: #ffffff;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .sidebar {
+      height: 100vh;
+      background-color: #1f1f1f;
+      padding-top: 20px;
+    }
+
+    .sidebar a {
+      color: #ffffff;
+      text-decoration: none;
+      padding: 10px 20px;
+      display: block;
+      border-radius: 5px;
+      margin: 5px 0;
+    }
+
+    .sidebar a:hover {
+      background-color: #28a745;
+    }
+
+    .content {
+      margin-left: 220px;
+      padding: 20px;
+    }
+
+    .card {
+      background-color: #1f1f1f;
+      border: none;
+      border-radius: 10px;
+      color: #ffffff;
+    }
+
+    .card-header {
+      background-color: #28a745;
+      color: #ffffff;
+      border-radius: 10px 10px 0 0;
+      font-weight: bold;
+    }
+
+    .btn {
+      background-color: #28a745;
+      border: none;
+      transition: transform 0.3s, background-color 0.3s;
+    }
+
+    .btn:hover {
+      background-color: #218838;
+      transform: scale(1.05);
+    }
+
+    .chart-container {
+      margin: 20px 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="d-flex">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <h4 class="text-center text-success">Coin2Flow Admin</h4>
+      <a href="#" id="dashboardLink"><i class="fas fa-chart-line"></i> Dashboard</a>
+      <a href="#" id="searchUsersLink"><i class="fas fa-search"></i> Search Users</a>
+      <a href="#" id="addMoneyLink"><i class="fas fa-wallet"></i> Add Money</a>
+      <a href="#" id="updateInfoLink"><i class="fas fa-user-edit"></i> Update Info</a>
+      <a href="#" id="viewQueriesLink"><i class="fas fa-envelope"></i> View Queries</a>
+      <a href="#" id="analyticsLink"><i class="fas fa-chart-pie"></i> Analytics</a>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content" id="mainContent">
+      <!-- Dashboard Overview -->
+      <h1 class="mb-4">Admin Dashboard</h1>
+      <div class="row">
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-header">Total Users</div>
+            <div class="card-body text-center">
+              <h3>{{totalUsers}}</h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-header">Total Balance</div>
+            <div class="card-body text-center">
+              <h3>${{totalBalance}}</h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-header">Transactions</div>
+            <div class="card-body text-center">
+              <h3>{{totalTransactions}}</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart Section -->
+      <div class="chart-container">
+        <canvas id="transactionChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Chart.js Transaction Chart
+    const ctx = document.getElementById('transactionChart').getContext('2d');
+    const transactionChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: {{ #each transactionMonths }}"{{this}}", {{/each }},
+    datasets: [
+      {
+        label: 'Credits',
+        data: {{ credits }},
+      borderColor: '#28a745',
+      tension: 0.4,
+      fill: false
+          },
+      {
+        label: 'Debits',
+        data: {{ debits }},
+      borderColor: '#ffc107',
+      tension: 0.4,
+      fill: false
+          }
+    ]
+      },
+    options: {
+      responsive: true,
+        plugins: {
+        legend: {
+          position: 'top',
+            labels: {
+            color: '#ffffff'
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: '#ffffff'
+          }
+        },
+        y: {
+          ticks: {
+            color: '#ffffff'
+          }
+        }
+      }
+    }
+    });
+  </script>
+</body>
+
+</html>

@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap");
+
 :root {
   --primary-color: #5e63ff;
   --primary-hover: #4a4eff;
@@ -298,6 +300,14 @@ body:has(#sidebar.hidden) .main-content {
 .card-link:hover {
   text-decoration: underline;
 }
+
+/* .card-body > a {
+  font-size: 10px;
+  font-family: "Lato", sans-serif;
+  font-weight: 300;
+  color: #ed1164;
+  text-decoration: none;
+} */
 
 /* Mobile Menu Specific Styles */
 .mobile-menu-btn {

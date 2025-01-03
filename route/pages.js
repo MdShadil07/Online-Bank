@@ -67,6 +67,18 @@ router.get('/Terms', (req, res)=> {
   res.render('Terms');
 });
 
+router.get('/About', authMiddleware, async (req, res) => {
+  const userId = req.session.user?.userId;
+  if (!userId) {
+    return res.redirect('/login');
+  }
+  res.render('About');
+});
+
+router.get('/AdminDash', (req, res) => {
+  res.render('AdminDash');
+})
+
 router.get('/viewBalance', (req, res) => {
   res.render('viewBalance');
 });

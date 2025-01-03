@@ -334,90 +334,130 @@ exports.login = (req, res) => {
     return res.status(400).json({ message: 'Email and password are required.' });
   }
 
-  const query = 'SELECT * FROM usersignup WHERE email = ?';
-  db.query(query, [email], async (err, result) => {
+  // First, try to find the user in the usersignup table
+  const userQuery = 'SELECT * FROM usersignup WHERE email = ?';
+  db.query(userQuery, [email], async (err, result) => {
     if (err) {
-      console.error('Error during login:', err.message);
+      console.error('Error during user login:', err.message);
       return res.status(500).json({ message: 'Internal server error. Please try again later.' });
     }
 
-    if (result.length === 0) {
-      return res.status(401).json({ message: 'Invalid email or password.' });
-    }
+    // If a user is found
+    if (result.length > 0) {
+      const user = result[0];
 
-    const user = result[0];
+      // Password validation using bcrypt
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        return res.status(401).json({ message: 'Invalid email or password.' });
+      }
 
-    // Password validation using bcrypt
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Invalid email or password.' });
-    }
+      // Store user data in session upon successful login
+      req.session.user = {
+        userId: user.userId,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        address: user.address,
+        gender: user.gender,
+        accountStatus: user.accountStatus,
+        DOB: user.DOB,
+        accountNo: user.accountNo,
+        ifscCode: user.ifscCode,
+        accountBalance: user.accountBalance,
+        initialDeposit: user.initialDeposit,
+        branchName: user.branchName,
+        profilePicture: user.profilePicture,
+        role: user.role, // Assuming 'role' field exists in usersignup
+      };
 
-    // Store user data in session upon successful login
-    req.session.user = {
-      userId: user.userId,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      phoneNumber: user.phoneNumber,
-      address: user.address,
-      gender: user.gender,
-      accountStatus: user.accountStatus,
-      DOB: user.DOB,
-      accountNo: user.accountNo,
-      ifscCode: user.ifscCode,
-      accountBalance: user.accountBalance,
-      initialDeposit: user.initialDeposit,
-      branchName: user.branchName,
-      profilePicture: user.profilePicture,
-    };
+      console.log('User logged in successfully:', req.session.user);
 
-    console.log('User logged in successfully:', req.session.user);
+      // Clear any previous interval for this user (if applicable)
+      if (userSessionIntervals.has(user.userId)) {
+        clearInterval(userSessionIntervals.get(user.userId));
+      }
 
-    // Clear any previous interval for this user (if applicable)
-    if (userSessionIntervals.has(user.userId)) {
-      clearInterval(userSessionIntervals.get(user.userId));
-    }
+      // Periodic refresh of user session
+      const intervalId = setInterval(() => {
+        const refreshQuery = 'SELECT * FROM usersignup WHERE userId = ?';
+        db.query(refreshQuery, [user.userId], (refreshErr, refreshResult) => {
+          if (refreshErr) {
+            console.error('Error refreshing session:', refreshErr.message);
+            return;
+          }
 
-    // Periodic refresh of user session (you can adjust the interval as needed)
-    const intervalId = setInterval(() => {
-      const refreshQuery = 'SELECT * FROM usersignup WHERE userId = ?';
-      db.query(refreshQuery, [user.userId], (refreshErr, refreshResult) => {
-        if (refreshErr) {
-          console.error('Error refreshing session:', refreshErr.message);
-          return;
-        }
+          if (refreshResult.length > 0) {
+            const updatedUser = refreshResult[0];
+            req.session.user = {
+              userId: updatedUser.userId,
+              firstName: updatedUser.firstName,
+              lastName: updatedUser.lastName,
+              email: updatedUser.email,
+              phoneNumber: updatedUser.phoneNumber,
+              address: updatedUser.address,
+              gender: updatedUser.gender,
+              DOB: updatedUser.DOB,
+              accountStatus: updatedUser.accountStatus,
+              accountNo: updatedUser.accountNo,
+              ifscCode: updatedUser.ifscCode,
+              accountBalance: updatedUser.accountBalance,
+              initialDeposit: updatedUser.initialDeposit,
+              branchName: updatedUser.branchName,
+              profilePicture: updatedUser.profilePicture,
+            };
+            // console.log('Session updated with latest user data.', req.session.user);
+          }
+        });
+      }, 2000); // Refresh interval, you can adjust the time based on your needs
 
-        if (refreshResult.length > 0) {
-          const updatedUser = refreshResult[0];
-          req.session.user = {
-            userId: updatedUser.userId,
-            firstName: updatedUser.firstName,
-            lastName: updatedUser.lastName,
-            email: updatedUser.email,
-            phoneNumber: updatedUser.phoneNumber,
-            address: updatedUser.address,
-            gender: updatedUser.gender,
-            DOB: updatedUser.DOB,
-            accountStatus: updatedUser.accountStatus,
-            accountNo: updatedUser.accountNo,
-            ifscCode: updatedUser.ifscCode,
-            accountBalance: updatedUser.accountBalance,
-            initialDeposit: updatedUser.initialDeposit,
-            branchName: updatedUser.branchName,
-            profilePicture: updatedUser.profilePicture,
-          };
-          // console.log('Session updated with latest user data.', req.session.user);
-        }
+      // Save the interval in the map
+      userSessionIntervals.set(user.userId, intervalId);
+
+      // Return success message for a user
+      return res.status(200).json({
+        message: 'Login successful.',
+        role: 'user', // Indicate that the logged-in user is a normal user
       });
-    }, 2000); // Refresh interval, you can adjust the time based on your needs
+    }
 
-    // Save the interval in the map
-    userSessionIntervals.set(user.userId, intervalId);
+    // If user not found, check the admins table
+    const adminQuery = 'SELECT * FROM admins WHERE email = ?';
+    db.query(adminQuery, [email], async (err, adminResult) => {
+      if (err) {
+        console.error('Error during admin login:', err.message);
+        return res.status(500).json({ message: 'Internal server error. Please try again later.' });
+      }
 
-    // Instead of returning a token, just return success message
-    res.status(200).json({
-      message: 'Login successful.',
+      // If an admin is found
+      if (adminResult.length > 0) {
+        const admin = adminResult[0];
+
+        // Password validation using bcrypt
+        if (password !== admin.password) {
+          return res.status(401).json({ message: 'Invalid email or password.' });
+        }
+        // Store admin data in session upon successful login
+        req.session.user = {
+          userId: admin.adminId, // Assuming 'adminId' field in admins table
+          firstName: admin.firstName,
+          lastName: admin.lastName,
+          email: admin.email,
+          role: 'admin', // Indicate that this is an admin
+        };
+
+        console.log('Admin logged in successfully:', req.session.user);
+
+        // Return success message for an admin
+        return res.status(200).json({
+          message: 'Login successful.',
+          role: 'admin', // Indicate that the logged-in user is an admin
+        });
+      }
+
+      // If neither a user nor an admin is found, return error
+      return res.status(401).json({ message: 'Invalid email or password.' });
     });
   });
 };

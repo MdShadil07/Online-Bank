@@ -95,7 +95,7 @@
         <div class="mb-3">
           <label for="email" class="form-label">Email Address</label>
           <div class="input-group">
-            <input type="email" id="email" name="Email" class="form-control" placeholder="Email" required>
+            <input type="email" id="email" name="email" class="form-control" placeholder="Email" required>
             <span class="input-group-text"><i class="fas fa-envelope"></i></span>
           </div>
         </div>
@@ -148,17 +148,18 @@
           }
 
           // Ensure response is JSON
-          const contentType = response.headers.get('Content-Type');
-          if (!contentType || !contentType.includes('application/json')) {
-            throw new Error('Invalid response from server.');
-          }
-
           return response.json();
         })
         .then(data => {
           if (data.message === 'Login successful.') {
-            // Redirect to the dashboard or home page after successful login
-            window.location.href = '/profile'; // Adjust to your desired redirect path
+            // Check if the response includes admin status
+            if (data.role === 'admin') {
+              // Redirect to the admin dashboard
+              window.location.href = 'AdminDash';
+            } else {
+              // Redirect to the user dashboard
+              window.location.href = '/dashboard';
+            }
           } else {
             throw new Error(data.message || 'Unknown error during login.');
           }
