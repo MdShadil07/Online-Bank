@@ -1,50 +1,52 @@
 const mysql = require("mysql2");
-const bcrypt = require('bcryptjs');
-const multer = require('multer');
-const jwt = require('jsonwebtoken');
+const bcrypt = require("bcryptjs");
+const multer = require("multer");
+const jwt = require("jsonwebtoken");
 const isAuthenticated = require("../middleware/authMiddleware");
-const nodemailer = require('nodemailer');
+const nodemailer = require("nodemailer");
 
 // Database connection setup
 const db = mysql.createConnection({
   host: process.env.DATABASE_HOST,
   user: process.env.DATABASE_USER,
   password: process.env.DATABASE_PASSWORD || null,
-  database: process.env.DATABASE
+  database: process.env.DATABASE,
 });
 
 // Check if database connection is successful
 db.connect((err) => {
   if (err) {
-    console.log('Error connecting to the database:', err);
+    console.log("Error connecting to the database:", err);
   } else {
-    console.log('Database connected successfully');
+    console.log("Database connected successfully");
   }
 });
 
 // Multer configuration for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+    cb(null, "uploads/");
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname);
-  }
+    cb(null, Date.now() + "-" + file.originalname);
+  },
 });
 const upload = multer({ storage: storage });
 
 // Middleware to verify JWT token
 function isTokenValid(req, res, next) {
-  const token = req.headers['authorization']?.split(' ')[1]; // Extract token from Authorization header
+  const token = req.headers["authorization"]?.split(" ")[1]; // Extract token from Authorization header
   if (!token) {
-    return res.status(401).json({ message: 'Unauthorized. Please log in.' });
+    return res.status(401).json({ message: "Unauthorized. Please log in." });
   }
 
   // Verify the token using JWT secret
   jwt.verify(token, process.env.JWT_SECRET_KEY, (err, decoded) => {
     if (err) {
-      console.log('jwt error',err);
-      return res.status(401).json({ message: 'Invalid or expired token. Please log in again.' });
+      console.log("jwt error", err);
+      return res
+        .status(401)
+        .json({ message: "Invalid or expired token. Please log in again." });
     }
 
     req.user = decoded; // Attach decoded user info to the request object
@@ -52,122 +54,156 @@ function isTokenValid(req, res, next) {
   });
 }
 
-
-
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // You can use other email services like Outlook, etc.
+  service: "gmail", // You can use other email services like Outlook, etc.
   auth: {
     user: process.env.EMAIL_USER, // Your email address (e.g., 'youremail@gmail.com')
     pass: process.env.EMAIL_PASS, // Your email password (use app-specific passwords if using Gmail with 2FA)
   },
 });
 
-
 // Sign up function
 exports.signup = (req, res) => {
   const {
-    firstName, lastName, DOB, email, phoneNumber, address, branchName, accountStatus,
-    accountType, gender, password, passwordConfirm, securityQuestion, securityAnswer,
-    twoFAEnabled, initialDeposit
+    firstName,
+    lastName,
+    DOB,
+    email,
+    phoneNumber,
+    address,
+    branchName,
+    accountStatus,
+    accountType,
+    gender,
+    password,
+    passwordConfirm,
+    securityQuestion,
+    securityAnswer,
+    twoFAEnabled,
+    initialDeposit,
   } = req.body;
 
-  if (!firstName || !lastName || !DOB || !email || !phoneNumber || !address ||
-      !accountType || !branchName || !gender || !password || !passwordConfirm || !initialDeposit) {
-    return res.render('signup', {
-      message: 'All fields are required.'
+  if (
+    !firstName ||
+    !lastName ||
+    !DOB ||
+    !email ||
+    !phoneNumber ||
+    !address ||
+    !accountType ||
+    !branchName ||
+    !gender ||
+    !password ||
+    !passwordConfirm ||
+    !initialDeposit
+  ) {
+    return res.render("signup", {
+      message: "All fields are required.",
     });
   }
 
   const maleProfile = `https://avatar.iran.liara.run/public/boy?username=${firstName}`;
   const femaleProfile = `https://avatar.iran.liara.run/public/girl?username=${firstName}`;
-  const profilePicture = gender.toLowerCase() === 'male' ? maleProfile : femaleProfile;
+  const profilePicture =
+    gender.toLowerCase() === "male" ? maleProfile : femaleProfile;
 
-  db.query('SELECT email FROM usersignup WHERE email = ?', [email], (err, result) => {
-    if (err) {
-      console.error('Database error during email check:', err);
-      return res.render('signup', {
-        message: 'Database error. Please try again later.'
-      });
-    }
-
-    if (result.length > 0) {
-      return res.render('signup', {
-        message: 'That email is already in use.'
-      });
-    }
-
-    if (password !== passwordConfirm) {
-      return res.render('signup', {
-        message: 'Passwords do not match.'
-      });
-    }
-
-    bcrypt.hash(password, 8, (err, hashedPassword) => {
+  db.query(
+    "SELECT email FROM usersignup WHERE email = ?",
+    [email],
+    (err, result) => {
       if (err) {
-        console.error('Error hashing password:', err);
-        return res.render('signup', {
-          message: 'Error during password encryption. Please try again later.'
+        console.error("Database error during email check:", err);
+        return res.render("signup", {
+          message: "Database error. Please try again later.",
         });
       }
 
-      const generateUniqueAccountNumber = (callback) => {
-        const attemptAccountNumber = () => {
-          const accountNo = Math.floor(1000000000 + Math.random() * 9000000000); // Generate a 10-digit number
-          db.query('SELECT COUNT(*) AS count FROM usersignup WHERE accountNo = ?', [accountNo], (err, result) => {
-            if (err) return callback(err);
-            if (result[0].count === 0) {
-              callback(null, accountNo);
-            } else {
-              attemptAccountNumber();
-            }
-          });
-        };
-        attemptAccountNumber();
-      };
+      if (result.length > 0) {
+        return res.render("signup", {
+          message: "That email is already in use.",
+        });
+      }
 
-      generateUniqueAccountNumber((err, accountNo) => {
+      if (password !== passwordConfirm) {
+        return res.render("signup", {
+          message: "Passwords do not match.",
+        });
+      }
+
+      bcrypt.hash(password, 8, (err, hashedPassword) => {
         if (err) {
-          console.error('Error generating account number:', err);
-          return res.render('signup', {
-            message: 'Error generating account number. Please try again later.'
+          console.error("Error hashing password:", err);
+          return res.render("signup", {
+            message:
+              "Error during password encryption. Please try again later.",
           });
         }
 
-        const ifscCode = `SHA${accountNo.toString().slice(-4)}`;
-
-        const userData = {
-          firstName,
-          lastName,
-          DOB,
-          email,
-          address,
-          phoneNumber,
-          branchName,
-          gender,
-          accountType,
-          accountStatus,
-          password: hashedPassword,
-          initialDeposit,
-          securityQuestion,
-          securityAnswer,
-          twoFAEnabled,
-          accountNo,
-          ifscCode,
-          profilePicture, // Automatically assigned profile picture
+        const generateUniqueAccountNumber = (callback) => {
+          const attemptAccountNumber = () => {
+            const accountNo = Math.floor(
+              1000000000 + Math.random() * 9000000000
+            ); // Generate a 10-digit number
+            db.query(
+              "SELECT COUNT(*) AS count FROM usersignup WHERE accountNo = ?",
+              [accountNo],
+              (err, result) => {
+                if (err) return callback(err);
+                if (result[0].count === 0) {
+                  callback(null, accountNo);
+                } else {
+                  attemptAccountNumber();
+                }
+              }
+            );
+          };
+          attemptAccountNumber();
         };
 
-        db.query('INSERT INTO usersignup SET ?', userData, (err, result) => {
+        generateUniqueAccountNumber((err, accountNo) => {
           if (err) {
-            console.error('Error during registration:', err);
-            return res.render('signup', {
-              message: 'Registration failed. Please try again later.'
+            console.error("Error generating account number:", err);
+            return res.render("signup", {
+              message:
+                "Error generating account number. Please try again later.",
             });
           }
 
-          console.log('User registered successfully:', result);
-          
-          // HTML email template with Font Awesome icons and transitions
-          const emailBody = `
+          const ifscCode = `SHA${accountNo.toString().slice(-3)}`;
+
+          const userData = {
+            firstName,
+            lastName,
+            DOB,
+            email,
+            address,
+            phoneNumber,
+            branchName,
+            gender,
+            accountType,
+            accountStatus,
+            password: hashedPassword,
+            initialDeposit,
+            securityQuestion,
+            securityAnswer,
+            twoFAEnabled,
+            accountNo,
+            ifscCode,
+            profilePicture, // Automatically assigned profile picture
+          };
+
+          db.query("INSERT INTO usersignup SET ?", userData, (err, result) => {
+            if (err) {
+              console.error("Error during registration:", err);
+              return res.render("signup", {
+                message: "Registration failed. Please try again later.",
+              });
+            }
+
+            console.log("User registered successfully:", result);
+
+            // HTML email template with Font Awesome icons and transitions
+            const emailBody = `
             <!DOCTYPE html>
             <html lang="en">
             <head>
@@ -296,50 +332,53 @@ exports.signup = (req, res) => {
             </html>
           `;
 
-          // Send email with HTML content
-          const mailOptions = {
-            from: process.env.EMAIL_USER, // Your email address
-            to: email,
-            subject: 'Welcome to Coin to Flow!',
-            html: emailBody,
-          };
+            // Send email with HTML content
+            const mailOptions = {
+              from: process.env.EMAIL_USER, // Your email address
+              to: email,
+              subject: "Welcome to Coin to Flow!",
+              html: emailBody,
+            };
 
-          transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-              console.error('Error sending email:', error);
-            } else {
-              console.log('Email sent:', info.response);
-            }
-          });
+            transporter.sendMail(mailOptions, (error, info) => {
+              if (error) {
+                console.error("Error sending email:", error);
+              } else {
+                console.log("Email sent:", info.response);
+              }
+            });
 
-          return res.render('login', {
-            message: 'You are registered, please log in.'
+            return res.render("login", {
+              message: "You are registered, please log in.",
+            });
           });
         });
       });
-    });
-  });
+    }
+  );
 };
-
 
 const userSessionIntervals = new Map(); // Store refresh intervals outside session
 
 // Login function
 
-
 exports.login = (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.status(400).json({ message: 'Email and password are required.' });
+    return res
+      .status(400)
+      .json({ message: "Email and password are required." });
   }
 
   // First, try to find the user in the usersignup table
-  const userQuery = 'SELECT * FROM usersignup WHERE email = ?';
+  const userQuery = "SELECT * FROM usersignup WHERE email = ?";
   db.query(userQuery, [email], async (err, result) => {
     if (err) {
-      console.error('Error during user login:', err.message);
-      return res.status(500).json({ message: 'Internal server error. Please try again later.' });
+      console.error("Error during user login:", err.message);
+      return res
+        .status(500)
+        .json({ message: "Internal server error. Please try again later." });
     }
 
     // If a user is found
@@ -349,7 +388,7 @@ exports.login = (req, res) => {
       // Password validation using bcrypt
       const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) {
-        return res.status(401).json({ message: 'Invalid email or password.' });
+        return res.status(401).json({ message: "Invalid email or password." });
       }
 
       // Store user data in session upon successful login
@@ -372,7 +411,7 @@ exports.login = (req, res) => {
         role: user.role, // Assuming 'role' field exists in usersignup
       };
 
-      console.log('User logged in successfully:', req.session.user);
+      console.log("User logged in successfully:", req.session.user);
 
       // Clear any previous interval for this user (if applicable)
       if (userSessionIntervals.has(user.userId)) {
@@ -381,10 +420,10 @@ exports.login = (req, res) => {
 
       // Periodic refresh of user session
       const intervalId = setInterval(() => {
-        const refreshQuery = 'SELECT * FROM usersignup WHERE userId = ?';
+        const refreshQuery = "SELECT * FROM usersignup WHERE userId = ?";
         db.query(refreshQuery, [user.userId], (refreshErr, refreshResult) => {
           if (refreshErr) {
-            console.error('Error refreshing session:', refreshErr.message);
+            console.error("Error refreshing session:", refreshErr.message);
             return;
           }
 
@@ -417,17 +456,19 @@ exports.login = (req, res) => {
 
       // Return success message for a user
       return res.status(200).json({
-        message: 'Login successful.',
-        role: 'user', // Indicate that the logged-in user is a normal user
+        message: "Login successful.",
+        role: "user", // Indicate that the logged-in user is a normal user
       });
     }
 
     // If user not found, check the admins table
-    const adminQuery = 'SELECT * FROM admins WHERE email = ?';
+    const adminQuery = "SELECT * FROM admins WHERE email = ?";
     db.query(adminQuery, [email], async (err, adminResult) => {
       if (err) {
-        console.error('Error during admin login:', err.message);
-        return res.status(500).json({ message: 'Internal server error. Please try again later.' });
+        console.error("Error during admin login:", err.message);
+        return res
+          .status(500)
+          .json({ message: "Internal server error. Please try again later." });
       }
 
       // If an admin is found
@@ -436,7 +477,9 @@ exports.login = (req, res) => {
 
         // Password validation using bcrypt
         if (password !== admin.password) {
-          return res.status(401).json({ message: 'Invalid email or password.' });
+          return res
+            .status(401)
+            .json({ message: "Invalid email or password." });
         }
         // Store admin data in session upon successful login
         req.session.user = {
@@ -444,20 +487,20 @@ exports.login = (req, res) => {
           firstName: admin.firstName,
           lastName: admin.lastName,
           email: admin.email,
-          role: 'admin', // Indicate that this is an admin
+          role: "admin", // Indicate that this is an admin
         };
 
-        console.log('Admin logged in successfully:', req.session.user);
+        console.log("Admin logged in successfully:", req.session.user);
 
         // Return success message for an admin
         return res.status(200).json({
-          message: 'Login successful.',
-          role: 'admin', // Indicate that the logged-in user is an admin
+          message: "Login successful.",
+          role: "admin", // Indicate that the logged-in user is an admin
         });
       }
 
       // If neither a user nor an admin is found, return error
-      return res.status(401).json({ message: 'Invalid email or password.' });
+      return res.status(401).json({ message: "Invalid email or password." });
     });
   });
 };
@@ -476,11 +519,13 @@ exports.logout = (req, res) => {
   // Destroy the session, effectively logging out the user
   req.session.destroy((err) => {
     if (err) {
-      console.error('Error during logout:', err.message);
-      return res.status(500).json({ message: 'Logout failed. Please try again later.' });
+      console.error("Error during logout:", err.message);
+      return res
+        .status(500)
+        .json({ message: "Logout failed. Please try again later." });
     }
 
     // Respond with a success message after the session is destroyed
-    res.status(200).json({ message: 'Logged out successfully.' });
+    res.status(200).json({ message: "Logged out successfully." });
   });
 };
